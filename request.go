@@ -20,12 +20,6 @@ func (c *Client) request(ctx context.Context, url string, param gorequest.Params
 	// 设置FORM格式
 	client.SetContentTypeForm()
 
-	// 设置用户代理
-	client.SetUserAgent(gorequest.GetRandomUserAgentSystem())
-
-	// 传入SDK版本
-	client.SetPassSdkVersion(Version)
-
 	// 设置参数
 	client.SetParams(param)
 
