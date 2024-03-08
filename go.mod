@@ -6,7 +6,7 @@ require (
 	go.dtapp.net/gojson v1.0.4
 	go.dtapp.net/golog v1.0.125
 	go.dtapp.net/gomd5 v1.0.1
-	go.dtapp.net/gorequest v1.0.47
+	go.dtapp.net/gorequest v1.0.48
 	go.dtapp.net/gostring v1.0.13
 	go.dtapp.net/gotrace_id v1.0.8
 )
