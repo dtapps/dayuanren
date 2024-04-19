@@ -8,7 +8,6 @@ require (
 	go.dtapp.net/gomd5 v1.0.1
 	go.dtapp.net/gorequest v1.0.48
 	go.dtapp.net/gostring v1.0.13
-	go.dtapp.net/gotrace_id v1.0.8
 )
 
 require (
@@ -56,10 +55,11 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.dtapp.net/gorandom v1.0.2 // indirect
 	go.dtapp.net/gotime v1.0.7 // indirect
+	go.dtapp.net/gotrace_id v1.0.8 // indirect
 	go.dtapp.net/gourl v1.0.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
