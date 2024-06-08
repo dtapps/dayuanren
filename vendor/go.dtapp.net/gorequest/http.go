@@ -11,11 +11,12 @@ import (
 	cookiemonster "github.com/MercuryEngineering/CookieMonster"
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gotime"
-	"go.dtapp.net/gotrace_id"
+	"go.dtapp.net/gourl"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -37,6 +38,9 @@ type Response struct {
 	ResponseTime          time.Time   //【返回】时间
 }
 
+// LogFunc 日志函数
+type LogFunc func(response *LogResponse)
+
 // App 实例
 type App struct {
 	Uri                          string           // 全局请求地址，没有设置url才会使用
@@ -51,6 +55,8 @@ type App struct {
 	debug                        bool             // 是否开启调试模式
 	p12Cert                      *tls.Certificate // p12证书内容
 	tlsMinVersion, tlsMaxVersion uint16           // TLS版本
+	clientIP                     string           // 客户端IP
+	logFunc                      LogFunc          // 日志记录函数
 }
 
 // NewHttp 实例化
@@ -152,7 +158,14 @@ func (app *App) SetP12Cert(content *tls.Certificate) {
 	app.p12Cert = content
 }
 
-// Get 发起GET请求
+// SetClientIP 设置客户端IP
+func (app *App) SetClientIP(clientIP string) {
+	if clientIP != "" {
+		app.clientIP = clientIP
+	}
+}
+
+// Get 发起 GET 请求
 func (app *App) Get(ctx context.Context, uri ...string) (httpResponse Response, err error) {
 	if len(uri) == 1 {
 		app.Uri = uri[0]
@@ -162,7 +175,17 @@ func (app *App) Get(ctx context.Context, uri ...string) (httpResponse Response, 
 	return request(app, ctx)
 }
 
-// Post 发起POST请求
+// Head 发起 HEAD 请求
+func (app *App) Head(ctx context.Context, uri ...string) (httpResponse Response, err error) {
+	if len(uri) == 1 {
+		app.Uri = uri[0]
+	}
+	// 设置请求方法
+	app.httpMethod = http.MethodHead
+	return request(app, ctx)
+}
+
+// Post 发起 POST 请求
 func (app *App) Post(ctx context.Context, uri ...string) (httpResponse Response, err error) {
 	if len(uri) == 1 {
 		app.Uri = uri[0]
@@ -172,9 +195,74 @@ func (app *App) Post(ctx context.Context, uri ...string) (httpResponse Response,
 	return request(app, ctx)
 }
 
+// Put 发起 PUT 请求
+func (app *App) Put(ctx context.Context, uri ...string) (httpResponse Response, err error) {
+	if len(uri) == 1 {
+		app.Uri = uri[0]
+	}
+	// 设置请求方法
+	app.httpMethod = http.MethodPut
+	return request(app, ctx)
+}
+
+// Patch 发起 PATCH 请求
+func (app *App) Patch(ctx context.Context, uri ...string) (httpResponse Response, err error) {
+	if len(uri) == 1 {
+		app.Uri = uri[0]
+	}
+	// 设置请求方法
+	app.httpMethod = http.MethodPatch
+	return request(app, ctx)
+}
+
+// Delete 发起 DELETE 请求
+func (app *App) Delete(ctx context.Context, uri ...string) (httpResponse Response, err error) {
+	if len(uri) == 1 {
+		app.Uri = uri[0]
+	}
+	// 设置请求方法
+	app.httpMethod = http.MethodDelete
+	return request(app, ctx)
+}
+
+// Connect 发起 CONNECT 请求
+func (app *App) Connect(ctx context.Context, uri ...string) (httpResponse Response, err error) {
+	if len(uri) == 1 {
+		app.Uri = uri[0]
+	}
+	// 设置请求方法
+	app.httpMethod = http.MethodConnect
+	return request(app, ctx)
+}
+
+// Options 发起 OPTIONS 请求
+func (app *App) Options(ctx context.Context, uri ...string) (httpResponse Response, err error) {
+	if len(uri) == 1 {
+		app.Uri = uri[0]
+	}
+	// 设置请求方法
+	app.httpMethod = http.MethodOptions
+	return request(app, ctx)
+}
+
+// Trace 发起 TRACE 请求
+func (app *App) Trace(ctx context.Context, uri ...string) (httpResponse Response, err error) {
+	if len(uri) == 1 {
+		app.Uri = uri[0]
+	}
+	// 设置请求方法
+	app.httpMethod = http.MethodTrace
+	return request(app, ctx)
+}
+
 // Request 发起请求
 func (app *App) Request(ctx context.Context) (httpResponse Response, err error) {
 	return request(app, ctx)
+}
+
+// SetLogFunc 设置日志记录方法
+func (app *App) SetLogFunc(logFunc LogFunc) {
+	app.logFunc = logFunc
 }
 
 // 请求接口
@@ -195,8 +283,8 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	if httpResponse.RequestUri == "" {
 		app.Error = errors.New("没有设置Uri")
 		if app.debug {
-			log.Printf("{%s}------------------------\n", gotrace_id.GetTraceIdContext(ctx))
-			log.Printf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error)
+			slog.DebugContext(ctx, fmt.Sprintf("{%s}------------------------\n", getIDContext(ctx)))
+			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error))
 		}
 		return httpResponse, app.Error
 	}
@@ -243,7 +331,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	}
 
 	// 跟踪编号
-	httpResponse.RequestId = gotrace_id.GetTraceIdContext(ctx)
+	httpResponse.RequestId = getIDContext(ctx)
 	if httpResponse.RequestId != "" {
 		httpResponse.RequestHeader.Set("X-Request-Id", httpResponse.RequestId)
 	}
@@ -251,12 +339,12 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	// 请求内容
 	var reqBody io.Reader
 
-	if httpResponse.RequestMethod == http.MethodPost && app.httpContentType == httpParamsModeJson {
+	if httpResponse.RequestMethod != http.MethodGet && app.httpContentType == httpParamsModeJson {
 		jsonStr, err := gojson.Marshal(httpResponse.RequestParams)
 		if err != nil {
 			app.Error = errors.New(fmt.Sprintf("解析出错 %s", err))
 			if app.debug {
-				log.Printf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error)
+				slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error))
 			}
 			return httpResponse, app.Error
 		}
@@ -264,7 +352,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 		reqBody = bytes.NewBuffer(jsonStr)
 	}
 
-	if httpResponse.RequestMethod == http.MethodPost && app.httpContentType == httpParamsModeForm {
+	if httpResponse.RequestMethod != http.MethodGet && app.httpContentType == httpParamsModeForm {
 		// 携带 form 参数
 		form := url.Values{}
 		for k, v := range httpResponse.RequestParams {
@@ -279,7 +367,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 		if err != nil {
 			app.Error = errors.New(fmt.Sprintf("解析XML出错 %s", err))
 			if app.debug {
-				log.Printf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error)
+				slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error))
 			}
 			return httpResponse, app.Error
 		}
@@ -290,7 +378,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	if err != nil {
 		app.Error = errors.New(fmt.Sprintf("创建请求出错 %s", err))
 		if app.debug {
-			log.Printf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error)
+			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error))
 		}
 		return httpResponse, app.Error
 	}
@@ -324,10 +412,10 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	}
 
 	if app.debug {
-		log.Printf("{%s}请求Uri：%s %s\n", httpResponse.RequestId, httpResponse.RequestMethod, httpResponse.RequestUri)
-		log.Printf("{%s}请求Params Get：%+v\n", httpResponse.RequestId, req.URL.RawQuery)
-		log.Printf("{%s}请求Params Post：%+v\n", httpResponse.RequestId, reqBody)
-		log.Printf("{%s}请求Header：%+v\n", httpResponse.RequestId, req.Header)
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Uri：%s %s\n", httpResponse.RequestId, httpResponse.RequestMethod, httpResponse.RequestUri))
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Params Get：%+v\n", httpResponse.RequestId, req.URL.RawQuery))
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Params Post：%+v\n", httpResponse.RequestId, reqBody))
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Header：%+v\n", httpResponse.RequestId, req.Header))
 	}
 
 	// 发送请求
@@ -335,7 +423,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	if err != nil {
 		app.Error = errors.New(fmt.Sprintf("请求出错 %s", err))
 		if app.debug {
-			log.Printf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error)
+			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error))
 		}
 		return httpResponse, app.Error
 	}
@@ -359,7 +447,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	if err != nil {
 		app.Error = errors.New(fmt.Sprintf("解析内容出错 %s", err))
 		if app.debug {
-			log.Printf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error)
+			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestId, app.Error))
 		}
 		return httpResponse, app.Error
 	}
@@ -373,10 +461,35 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	httpResponse.ResponseContentLength = resp.ContentLength
 
 	if app.debug {
-		log.Printf("{%s}返回Status：%s\n", httpResponse.RequestId, httpResponse.ResponseStatus)
-		log.Printf("{%s}返回Header：%+v\n", httpResponse.RequestId, httpResponse.ResponseHeader)
-		log.Printf("{%s}返回Body：%s\n", httpResponse.RequestId, httpResponse.ResponseBody)
-		log.Printf("{%s}------------------------\n", gotrace_id.GetTraceIdContext(ctx))
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}返回Status：%s\n", httpResponse.RequestId, httpResponse.ResponseStatus))
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}返回Header：%+v\n", httpResponse.RequestId, httpResponse.ResponseHeader))
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}返回Body：%s\n", httpResponse.RequestId, httpResponse.ResponseBody))
+		slog.DebugContext(ctx, fmt.Sprintf("{%s}------------------------\n", getIDContext(ctx)))
+	}
+
+	// 调用日志记录函数
+	if app.logFunc != nil {
+		app.logFunc(&LogResponse{
+			//HttpResponse:       resp,
+			TraceID:            httpResponse.RequestId,
+			RequestID:          httpResponse.RequestId,
+			RequestTime:        httpResponse.RequestTime,
+			RequestUri:         httpResponse.RequestUri,
+			RequestUrl:         gourl.UriParse(httpResponse.RequestUri).Url,
+			RequestApi:         gourl.UriParse(httpResponse.RequestUri).Path,
+			RequestMethod:      httpResponse.RequestMethod,
+			RequestParams:      gojson.JsonEncodeNoError(httpResponse.RequestParams),
+			RequestHeader:      gojson.JsonEncodeNoError(httpResponse.RequestHeader),
+			RequestIP:          app.clientIP,
+			ResponseHeader:     gojson.JsonEncodeNoError(httpResponse.ResponseHeader),
+			ResponseStatusCode: httpResponse.ResponseStatusCode,
+			ResponseBody:       string(httpResponse.ResponseBody),
+			ResponseBodyJson:   gojson.JsonEncodeNoError(gojson.JsonDecodeNoError(string(httpResponse.ResponseBody))),
+			ResponseBodyXml:    gojson.XmlEncodeNoError(gojson.XmlDecodeNoError(httpResponse.ResponseBody)),
+			ResponseTime:       httpResponse.ResponseTime,
+			GoVersion:          runtime.Version(),
+			SdkVersion:         Version,
+		})
 	}
 
 	return httpResponse, err

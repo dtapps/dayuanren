@@ -1,28 +1,10 @@
 # github.com/MercuryEngineering/CookieMonster v0.0.0-20180304172713-1584578b3403
 ## explicit
 github.com/MercuryEngineering/CookieMonster
-# github.com/andeya/ameda v1.5.3
-## explicit; go 1.13
-github.com/andeya/ameda
-# github.com/andeya/goutil v1.0.1
-## explicit
-github.com/andeya/goutil
-github.com/andeya/goutil/errors
-github.com/andeya/goutil/internal/ameda
 # github.com/basgys/goxml2json v1.1.0
 ## explicit
 github.com/basgys/goxml2json
-# github.com/bytedance/go-tagexpr/v2 v2.9.11
-## explicit; go 1.14
-github.com/bytedance/go-tagexpr/v2
-github.com/bytedance/go-tagexpr/v2/validator
-# github.com/bytedance/gopkg v0.0.0-20240507064146-197ded923ae3
-## explicit; go 1.15
-github.com/bytedance/gopkg/internal/runtimex
-github.com/bytedance/gopkg/lang/dirtmake
-github.com/bytedance/gopkg/lang/fastrand
-github.com/bytedance/gopkg/lang/mcache
-# github.com/bytedance/sonic v1.11.6
+# github.com/bytedance/sonic v1.11.8
 ## explicit; go 1.16
 github.com/bytedance/sonic
 github.com/bytedance/sonic/ast
@@ -52,40 +34,11 @@ github.com/bytedance/sonic/loader/internal/rt
 # github.com/cloudwego/base64x v0.1.4
 ## explicit; go 1.16
 github.com/cloudwego/base64x
-# github.com/cloudwego/hertz v0.8.1
-## explicit; go 1.16
-github.com/cloudwego/hertz/internal/bytesconv
-github.com/cloudwego/hertz/internal/bytestr
-github.com/cloudwego/hertz/internal/nocopy
-github.com/cloudwego/hertz/pkg/app
-github.com/cloudwego/hertz/pkg/app/client/retry
-github.com/cloudwego/hertz/pkg/app/server/binding
-github.com/cloudwego/hertz/pkg/app/server/binding/internal/decoder
-github.com/cloudwego/hertz/pkg/app/server/registry
-github.com/cloudwego/hertz/pkg/app/server/render
-github.com/cloudwego/hertz/pkg/common/bytebufferpool
-github.com/cloudwego/hertz/pkg/common/compress
-github.com/cloudwego/hertz/pkg/common/config
-github.com/cloudwego/hertz/pkg/common/errors
-github.com/cloudwego/hertz/pkg/common/hlog
-github.com/cloudwego/hertz/pkg/common/json
-github.com/cloudwego/hertz/pkg/common/stackless
-github.com/cloudwego/hertz/pkg/common/tracer/stats
-github.com/cloudwego/hertz/pkg/common/tracer/traceinfo
-github.com/cloudwego/hertz/pkg/common/utils
-github.com/cloudwego/hertz/pkg/network
-github.com/cloudwego/hertz/pkg/protocol
-github.com/cloudwego/hertz/pkg/protocol/consts
-github.com/cloudwego/hertz/pkg/route/consts
-github.com/cloudwego/hertz/pkg/route/param
 # github.com/cloudwego/iasm v0.2.0
 ## explicit; go 1.16
 github.com/cloudwego/iasm/expr
 github.com/cloudwego/iasm/x86_64
-# github.com/fsnotify/fsnotify v1.7.0
-## explicit; go 1.17
-github.com/fsnotify/fsnotify
-# github.com/gabriel-vasile/mimetype v1.4.3
+# github.com/gabriel-vasile/mimetype v1.4.4
 ## explicit; go 1.20
 github.com/gabriel-vasile/mimetype
 github.com/gabriel-vasile/mimetype/internal/charset
@@ -101,10 +54,6 @@ github.com/gin-gonic/gin/binding
 github.com/gin-gonic/gin/internal/bytesconv
 github.com/gin-gonic/gin/internal/json
 github.com/gin-gonic/gin/render
-# github.com/go-ole/go-ole v1.3.0
-## explicit; go 1.12
-github.com/go-ole/go-ole
-github.com/go-ole/go-ole/oleutil
 # github.com/go-playground/locales v0.14.1
 ## explicit; go 1.17
 github.com/go-playground/locales
@@ -112,11 +61,11 @@ github.com/go-playground/locales/currency
 # github.com/go-playground/universal-translator v0.18.1
 ## explicit; go 1.18
 github.com/go-playground/universal-translator
-# github.com/go-playground/validator/v10 v10.20.0
+# github.com/go-playground/validator/v10 v10.21.0
 ## explicit; go 1.18
 github.com/go-playground/validator/v10
-# github.com/goccy/go-json v0.10.2
-## explicit; go 1.12
+# github.com/goccy/go-json v0.10.3
+## explicit; go 1.19
 github.com/goccy/go-json
 github.com/goccy/go-json/internal/decoder
 github.com/goccy/go-json/internal/encoder
@@ -126,26 +75,12 @@ github.com/goccy/go-json/internal/encoder/vm_color_indent
 github.com/goccy/go-json/internal/encoder/vm_indent
 github.com/goccy/go-json/internal/errors
 github.com/goccy/go-json/internal/runtime
-# github.com/google/uuid v1.6.0
-## explicit
-github.com/google/uuid
-# github.com/hertz-contrib/requestid v1.1.0
-## explicit; go 1.16
-github.com/hertz-contrib/requestid
-# github.com/jinzhu/inflection v1.0.0
-## explicit
-github.com/jinzhu/inflection
-# github.com/jinzhu/now v1.1.5
-## explicit; go 1.12
-github.com/jinzhu/now
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
 # github.com/klauspost/cpuid/v2 v2.2.7
 ## explicit; go 1.15
 github.com/klauspost/cpuid/v2
-# github.com/kr/text v0.2.0
-## explicit
 # github.com/leodido/go-urn v1.4.0
 ## explicit; go 1.18
 github.com/leodido/go-urn
@@ -159,10 +94,6 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 ## explicit; go 1.12
 github.com/modern-go/reflect2
-# github.com/nyaruka/phonenumbers v1.3.4
-## explicit; go 1.19
-github.com/nyaruka/phonenumbers
-github.com/nyaruka/phonenumbers/gen
 # github.com/pelletier/go-toml/v2 v2.2.2
 ## explicit; go 1.16
 github.com/pelletier/go-toml/v2
@@ -170,31 +101,6 @@ github.com/pelletier/go-toml/v2/internal/characters
 github.com/pelletier/go-toml/v2/internal/danger
 github.com/pelletier/go-toml/v2/internal/tracker
 github.com/pelletier/go-toml/v2/unstable
-# github.com/rogpeppe/go-internal v1.9.0
-## explicit; go 1.17
-# github.com/shirou/gopsutil v3.21.11+incompatible
-## explicit
-github.com/shirou/gopsutil/cpu
-github.com/shirou/gopsutil/host
-github.com/shirou/gopsutil/internal/common
-github.com/shirou/gopsutil/mem
-github.com/shirou/gopsutil/net
-github.com/shirou/gopsutil/process
-# github.com/tidwall/gjson v1.17.1
-## explicit; go 1.12
-github.com/tidwall/gjson
-# github.com/tidwall/match v1.1.1
-## explicit; go 1.15
-github.com/tidwall/match
-# github.com/tidwall/pretty v1.2.1
-## explicit; go 1.16
-github.com/tidwall/pretty
-# github.com/tklauser/go-sysconf v0.3.14
-## explicit; go 1.18
-github.com/tklauser/go-sysconf
-# github.com/tklauser/numcpus v0.8.0
-## explicit; go 1.18
-github.com/tklauser/numcpus
 # github.com/twitchyliquid64/golang-asm v0.15.1
 ## explicit; go 1.13
 github.com/twitchyliquid64/golang-asm/asm/arch
@@ -217,29 +123,23 @@ github.com/twitchyliquid64/golang-asm/unsafeheader
 # github.com/ugorji/go/codec v1.2.12
 ## explicit; go 1.11
 github.com/ugorji/go/codec
-# github.com/yusufpapurcu/wmi v1.2.4
-## explicit; go 1.16
-github.com/yusufpapurcu/wmi
 # go.dtapp.net/gojson v1.0.4
 ## explicit; go 1.21.5
 go.dtapp.net/gojson
 go.dtapp.net/gojson/json
-# go.dtapp.net/golog v1.0.130
-## explicit; go 1.22
-go.dtapp.net/golog
 # go.dtapp.net/gomd5 v1.0.1
 ## explicit; go 1.18
 go.dtapp.net/gomd5
 # go.dtapp.net/gorandom v1.0.3
 ## explicit; go 1.22
 go.dtapp.net/gorandom
-# go.dtapp.net/gorequest v1.0.51
-## explicit; go 1.22
+# go.dtapp.net/gorequest v1.0.57
+## explicit; go 1.22.3
 go.dtapp.net/gorequest
-# go.dtapp.net/gostring v1.0.14
+# go.dtapp.net/gostring v1.0.15
 ## explicit; go 1.22
 go.dtapp.net/gostring
-# go.dtapp.net/gotime v1.0.9
+# go.dtapp.net/gotime v1.0.11
 ## explicit; go 1.22
 go.dtapp.net/gotime
 # go.dtapp.net/gotrace_id v1.0.12
@@ -251,10 +151,10 @@ go.dtapp.net/gourl
 # golang.org/x/arch v0.8.0
 ## explicit; go 1.18
 golang.org/x/arch/x86/x86asm
-# golang.org/x/crypto v0.23.0
+# golang.org/x/crypto v0.24.0
 ## explicit; go 1.18
 golang.org/x/crypto/sha3
-# golang.org/x/net v0.25.0
+# golang.org/x/net v0.26.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -264,12 +164,11 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.20.0
+# golang.org/x/sys v0.21.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
-golang.org/x/sys/windows
-# golang.org/x/text v0.15.0
+# golang.org/x/text v0.16.0
 ## explicit; go 1.18
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
@@ -281,13 +180,11 @@ golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
-golang.org/x/text/internal/format
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
-golang.org/x/text/language/display
 golang.org/x/text/runes
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
@@ -295,42 +192,19 @@ golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # google.golang.org/protobuf v1.34.1
 ## explicit; go 1.17
-google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
-google.golang.org/protobuf/internal/descfmt
-google.golang.org/protobuf/internal/descopts
 google.golang.org/protobuf/internal/detrand
-google.golang.org/protobuf/internal/editiondefaults
-google.golang.org/protobuf/internal/encoding/defval
 google.golang.org/protobuf/internal/encoding/messageset
-google.golang.org/protobuf/internal/encoding/tag
-google.golang.org/protobuf/internal/encoding/text
 google.golang.org/protobuf/internal/errors
-google.golang.org/protobuf/internal/filedesc
-google.golang.org/protobuf/internal/filetype
 google.golang.org/protobuf/internal/flags
 google.golang.org/protobuf/internal/genid
-google.golang.org/protobuf/internal/impl
 google.golang.org/protobuf/internal/order
 google.golang.org/protobuf/internal/pragma
-google.golang.org/protobuf/internal/set
 google.golang.org/protobuf/internal/strs
-google.golang.org/protobuf/internal/version
 google.golang.org/protobuf/proto
 google.golang.org/protobuf/reflect/protoreflect
 google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
-google.golang.org/protobuf/runtime/protoimpl
-# gopkg.in/natefinch/lumberjack.v2 v2.2.1
-## explicit; go 1.13
-gopkg.in/natefinch/lumberjack.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# gorm.io/gorm v1.25.10
-## explicit; go 1.18
-gorm.io/gorm
-gorm.io/gorm/clause
-gorm.io/gorm/logger
-gorm.io/gorm/schema
-gorm.io/gorm/utils

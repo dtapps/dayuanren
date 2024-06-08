@@ -1,7 +1,7 @@
 package gotime
 
 import (
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +15,8 @@ func Current() Pro {
 
 	p.loc, err = time.LoadLocation("Asia/Shanghai")
 	if err != nil {
-		log.Printf("【gotime】时区错误：%v\n", err)
+		// TODO 时区错误
+		slog.Error("时区错误", "err", err.Error())
 		p.Time = time.Now().Add(time.Hour * 8)
 	} else {
 		p.Time = time.Now().In(p.loc)
@@ -39,7 +40,8 @@ func SetCurrentParse(str string) Pro {
 
 	p.loc, err = time.LoadLocation("Asia/Shanghai")
 	if err != nil {
-		log.Printf("【gotime】时区错误：%v\n", err)
+		// TODO 时区错误
+		slog.Error("时区错误", "err", err.Error())
 		p.Time = time.Now().Add(time.Hour * 8)
 	}
 
@@ -93,7 +95,7 @@ func (p Pro) Format() string {
 
 // FormatFilter 今天此刻格式化 带 过滤无效时间
 func (p Pro) FormatFilter() string {
-	if p.Time.Format(DateTimeFormat) == "0001-01-01 00:00:00" || p.Time.Format(DateTimeFormat) == "0001-01-01 08:05:43" {
+	if strings.Contains(p.Time.Format(DateTimeFormat), "0001-01-01") {
 		return ""
 	} else {
 		return p.Time.Format(DateTimeFormat)

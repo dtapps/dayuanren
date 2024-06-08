@@ -1,5 +1,3 @@
-// +build go1.16,!go1.17
-
 /*
  * Copyright 2021 ByteDance Inc.
  *
@@ -16,42 +14,36 @@
  * limitations under the License.
  */
 
-package encoder
+package ast
 
 import (
     `unsafe`
-
-    _ `github.com/cloudwego/base64x`
+    `unicode/utf8`
 
     `github.com/bytedance/sonic/internal/rt`
 )
-
-//go:linkname _subr__b64encode github.com/cloudwego/base64x._subr__b64encode
-var _subr__b64encode uintptr
 
 //go:noescape
 //go:linkname memmove runtime.memmove
 //goland:noinspection GoUnusedParameter
 func memmove(to unsafe.Pointer, from unsafe.Pointer, n uintptr)
 
-//go:linkname mapiternext runtime.mapiternext
+//go:linkname unsafe_NewArray reflect.unsafe_NewArray
 //goland:noinspection GoUnusedParameter
-func mapiternext(it *rt.GoMapIterator)
+func unsafe_NewArray(typ *rt.GoType, n int) unsafe.Pointer
 
-//go:linkname mapiterinit runtime.mapiterinit
-//goland:noinspection GoUnusedParameter
-func mapiterinit(t *rt.GoMapType, m *rt.GoMap, it *rt.GoMapIterator)
+//go:nosplit
+func mem2ptr(s []byte) unsafe.Pointer {
+    return (*rt.GoSlice)(unsafe.Pointer(&s)).Ptr
+}
 
-//go:linkname isValidNumber encoding/json.isValidNumber
-//goland:noinspection GoUnusedParameter
-func isValidNumber(s string) bool
+var (
+    //go:linkname safeSet encoding/json.safeSet
+    safeSet [utf8.RuneSelf]bool
 
-//go:noescape
-//go:linkname memclrNoHeapPointers runtime.memclrNoHeapPointers
-//goland:noinspection GoUnusedParameter
-func memclrNoHeapPointers(ptr unsafe.Pointer, n uintptr)
+    //go:linkname hex encoding/json.hex
+    hex string
+)
 
-var _runtime_writeBarrier uintptr = rt.GcwbAddr()
-
-//go:linkname gcWriteBarrierAX runtime.gcWriteBarrier
-func gcWriteBarrierAX()
+//go:linkname unquoteBytes encoding/json.unquoteBytes
+func unquoteBytes(s []byte) (t []byte, ok bool)
