@@ -1,7 +1,7 @@
 package dayuanren
 
 import (
-	"go.dtapp.net/golog"
+	"go.dtapp.net/gorequest"
 )
 
 // ConfigClient 配置
@@ -11,11 +11,20 @@ func (c *Client) ConfigClient(config *ClientConfig) {
 	c.config.apiKey = config.ApiKey
 }
 
-// ConfigApiGormFun 接口日志配置
-func (c *Client) ConfigApiGormFun(apiClientFun golog.ApiGormFun) {
-	client := apiClientFun()
-	if client != nil {
-		c.gormLog.client = client
-		c.gormLog.status = true
+// SetClientIP 配置
+func (c *Client) SetClientIP(clientIP string) {
+	if clientIP == "" {
+		return
+	}
+	c.config.clientIP = clientIP
+	if c.httpClient != nil {
+		c.httpClient.SetClientIP(clientIP)
+	}
+}
+
+// ConfigLogFun 设置日志记录函数
+func (c *Client) ConfigLogFun(logFun gorequest.LogFunc) {
+	if c.httpClient != nil {
+		c.httpClient.SetLogFunc(logFun)
 	}
 }

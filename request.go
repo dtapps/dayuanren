@@ -11,27 +11,19 @@ func (c *Client) request(ctx context.Context, url string, param gorequest.Params
 	// 签名
 	param.Set("sign", c.sign(param))
 
-	// 创建请求
-	client := gorequest.NewHttp()
-
 	// 设置请求地址
-	client.SetUri(c.config.apiURL + url)
+	c.httpClient.SetUri(c.config.apiURL + url)
 
 	// 设置FORM格式
-	client.SetContentTypeForm()
+	c.httpClient.SetContentTypeForm()
 
 	// 设置参数
-	client.SetParams(param)
+	c.httpClient.SetParams(param)
 
 	// 发起请求
-	request, err := client.Post(ctx)
+	request, err := c.httpClient.Post(ctx)
 	if err != nil {
 		return gorequest.Response{}, err
-	}
-
-	// 日志
-	if c.gormLog.status {
-		go c.gormLog.client.Middleware(ctx, request)
 	}
 
 	return request, err
