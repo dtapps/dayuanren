@@ -8,6 +8,7 @@ require (
 	go.dtapp.net/gorequest v1.0.58
 	go.dtapp.net/gostring v1.0.15
 	go.dtapp.net/gotrace_id v1.0.12
+	go.opentelemetry.io/otel/trace v1.27.0
 )
 
 require (
@@ -43,7 +44,6 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0 // indirect
 	go.opentelemetry.io/otel v1.27.0 // indirect
 	go.opentelemetry.io/otel/metric v1.27.0 // indirect
-	go.opentelemetry.io/otel/trace v1.27.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
