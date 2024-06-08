@@ -12,9 +12,13 @@ import (
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gotime"
 	"go.dtapp.net/gourl"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"runtime"
 	"strings"
@@ -39,7 +43,7 @@ type Response struct {
 }
 
 // LogFunc 日志函数
-type LogFunc func(response *LogResponse)
+type LogFunc func(ctx context.Context, response *LogResponse)
 
 // App 实例
 type App struct {
@@ -57,6 +61,7 @@ type App struct {
 	tlsMinVersion, tlsMaxVersion uint16           // TLS版本
 	clientIP                     string           // 客户端IP
 	logFunc                      LogFunc          // 日志记录函数
+	tr                           trace.Tracer     // 链路追踪
 }
 
 // NewHttp 实例化
@@ -265,8 +270,22 @@ func (app *App) SetLogFunc(logFunc LogFunc) {
 	app.logFunc = logFunc
 }
 
+// SetTracer 设置链路追踪
+func (app *App) SetTracer(tr trace.Tracer) {
+	app.tr = tr
+}
+
 // 请求接口
 func request(app *App, ctx context.Context) (httpResponse Response, err error) {
+
+	if app.tr != nil {
+
+		ctx, span := app.tr.Start(ctx, app.Uri)
+		defer span.End()
+
+		ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
+
+	}
 
 	// 赋值
 	httpResponse.RequestTime = gotime.Current().Time
@@ -290,7 +309,13 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	}
 
 	// 创建 http 客户端
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: otelhttp.NewTransport(
+			http.DefaultTransport,
+			otelhttp.WithClientTrace(func(ctx context.Context) *httptrace.ClientTrace {
+				return otelhttptrace.NewClientTrace(ctx)
+			}),
+		)}
 
 	transportStatus := false
 	transport := &http.Transport{}
@@ -374,7 +399,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 	}
 
 	// 创建请求
-	req, err := http.NewRequest(httpResponse.RequestMethod, httpResponse.RequestUri, reqBody)
+	req, err := http.NewRequestWithContext(ctx, httpResponse.RequestMethod, httpResponse.RequestUri, reqBody)
 	if err != nil {
 		app.Error = errors.New(fmt.Sprintf("创建请求出错 %s", err))
 		if app.debug {
@@ -469,7 +494,7 @@ func request(app *App, ctx context.Context) (httpResponse Response, err error) {
 
 	// 调用日志记录函数
 	if app.logFunc != nil {
-		app.logFunc(&LogResponse{
+		app.logFunc(ctx, &LogResponse{
 			//HttpResponse:       resp,
 			TraceID:            httpResponse.RequestId,
 			RequestID:          httpResponse.RequestId,
