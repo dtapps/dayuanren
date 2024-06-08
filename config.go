@@ -22,8 +22,8 @@ func (c *Client) SetClientIP(clientIP string) {
 	}
 }
 
-// ConfigLogFun 设置日志记录函数
-func (c *Client) ConfigLogFun(logFun gorequest.LogFunc) {
+// SetLogFun 设置日志记录函数
+func (c *Client) SetLogFun(logFun gorequest.LogFunc) {
 	if c.httpClient != nil {
 		c.httpClient.SetLogFunc(logFun)
 	}
