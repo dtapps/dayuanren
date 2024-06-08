@@ -1,0 +1,8 @@
+.env
+.git
+.svn
+.idea
+.vscode
+.log
+go_mod.sh
+/vendor/
