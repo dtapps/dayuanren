@@ -3,6 +3,7 @@ package dayuanren
 import (
 	"errors"
 	"go.dtapp.net/gorequest"
+	"go.opentelemetry.io/otel"
 )
 
 // ClientConfig 实例配置
@@ -33,6 +34,7 @@ func NewClient(config *ClientConfig) (*Client, error) {
 	}
 
 	c.httpClient = gorequest.NewHttp()
+	c.httpClient.SetTracer(otel.Tracer("go.dtapp.net/dayuanren"))
 
 	c.config.clientIP = config.ClientIP
 	c.config.apiURL = config.ApiURL

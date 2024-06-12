@@ -280,10 +280,10 @@ func (app *App) SetTracer(tr trace.Tracer) {
 // 请求接口
 func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 
+	// OpenTelemetry 自定义追踪
 	if c.tr != nil {
-		ctx, span := c.tr.Start(ctx, c.Uri)
-		defer span.End()
-		ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
+		ctx, c.span = c.tr.Start(ctx, c.Uri)
+		defer c.span.End()
 	}
 
 	// 赋值
@@ -316,9 +316,6 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 				return otelhttptrace.NewClientTrace(ctx)
 			}),
 		)}
-
-	// OpenTelemetry追踪
-	c.span = trace.SpanFromContext(ctx)
 
 	transportStatus := false
 	transport := &http.Transport{}
@@ -439,12 +436,14 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		}
 	}
 
-	c.span.SetAttributes(attribute.String("request.uri", httpResponse.RequestUri))
-	c.span.SetAttributes(attribute.String("request.url", gourl.UriParse(httpResponse.RequestUri).Url))
-	c.span.SetAttributes(attribute.String("request.api", gourl.UriParse(httpResponse.RequestUri).Path))
-	c.span.SetAttributes(attribute.String("request.method", httpResponse.RequestMethod))
-	c.span.SetAttributes(attribute.String("request.header", gojson.JsonEncodeNoError(httpResponse.RequestHeader)))
-	c.span.SetAttributes(attribute.String("request.params", gojson.JsonEncodeNoError(httpResponse.RequestParams)))
+	if c.tr != nil {
+		c.span.SetAttributes(attribute.String("request.uri", httpResponse.RequestUri))
+		c.span.SetAttributes(attribute.String("request.url", gourl.UriParse(httpResponse.RequestUri).Url))
+		c.span.SetAttributes(attribute.String("request.api", gourl.UriParse(httpResponse.RequestUri).Path))
+		c.span.SetAttributes(attribute.String("request.method", httpResponse.RequestMethod))
+		c.span.SetAttributes(attribute.String("request.header", gojson.JsonEncodeNoError(httpResponse.RequestHeader)))
+		c.span.SetAttributes(attribute.String("request.params", gojson.JsonEncodeNoError(httpResponse.RequestParams)))
+	}
 	if c.debug {
 		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Uri：%s %s\n", httpResponse.RequestID, httpResponse.RequestMethod, httpResponse.RequestUri))
 		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Params Get：%+v\n", httpResponse.RequestID, req.URL.RawQuery))
@@ -495,9 +494,11 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	httpResponse.ResponseContentLength = resp.ContentLength
 
 	// OpenTelemetry追踪
-	c.span.SetAttributes(attribute.String("response.status", httpResponse.ResponseStatus))
-	c.span.SetAttributes(attribute.Int("response.status_code", httpResponse.ResponseStatusCode))
-	c.span.SetAttributes(attribute.String("response.header", gojson.JsonEncodeNoError(httpResponse.ResponseHeader)))
+	if c.tr != nil {
+		c.span.SetAttributes(attribute.String("response.status", httpResponse.ResponseStatus))
+		c.span.SetAttributes(attribute.Int("response.status_code", httpResponse.ResponseStatusCode))
+		c.span.SetAttributes(attribute.String("response.header", gojson.JsonEncodeNoError(httpResponse.ResponseHeader)))
+	}
 	if gojson.IsValidJSON(string(httpResponse.ResponseBody)) {
 		c.span.SetAttributes(attribute.String("response.body", gojson.JsonEncodeNoError(gojson.JsonDecodeNoError(string(httpResponse.ResponseBody)))))
 	} else {
