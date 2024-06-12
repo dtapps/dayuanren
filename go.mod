@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	go.dtapp.net/gojson v1.0.4
 	go.dtapp.net/gomd5 v1.0.1
-	go.dtapp.net/gorequest v1.0.62
+	go.dtapp.net/gorequest v1.0.63
 	go.dtapp.net/gostring v1.0.15
 	go.opentelemetry.io/otel v1.27.0
 	go.opentelemetry.io/otel/trace v1.27.0
