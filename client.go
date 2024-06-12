@@ -3,7 +3,7 @@ package dayuanren
 import (
 	"errors"
 	"go.dtapp.net/gorequest"
-	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // ClientConfig 实例配置
@@ -23,6 +23,8 @@ type Client struct {
 		userID   int64  // 商户ID
 		apiKey   string // 秘钥
 	}
+	trace bool       // OpenTelemetry链路追踪
+	span  trace.Span // OpenTelemetry链路追踪
 }
 
 // NewClient 创建实例化
@@ -34,12 +36,12 @@ func NewClient(config *ClientConfig) (*Client, error) {
 	}
 
 	c.httpClient = gorequest.NewHttp()
-	c.httpClient.SetTracer(otel.Tracer("go.dtapp.net/dayuanren"))
 
 	c.config.clientIP = config.ClientIP
 	c.config.apiURL = config.ApiURL
 	c.config.userID = config.UserID
 	c.config.apiKey = config.ApiKey
 
+	c.trace = true
 	return c, nil
 }

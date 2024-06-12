@@ -5,6 +5,7 @@ import (
 	"errors"
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type CheckResponse struct {
@@ -49,18 +50,31 @@ func newCheckResult(result CheckResponse, body []byte, http gorequest.Response) 
 // https://www.showdoc.com.cn/dyr/9227006175502841
 // https://www.kancloud.cn/boyanyun/boyanyun_huafei/3097254
 func (c *Client) Check(ctx context.Context, outTradeNums string, notMustParams ...gorequest.Params) (*CheckResult, error) {
+
+	// OpenTelemetry链路追踪
+	ctx = c.TraceStartSpan(ctx, "index/check")
+	defer c.TraceEndSpan()
+
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
 	params.Set("userid", c.config.userID)      // 账户ID
 	params.Set("out_trade_nums", outTradeNums) // 商户订单号；多个用英文,分割
+
 	// 请求
 	request, err := c.request(ctx, "index/check", params)
 	if err != nil {
+		if c.trace {
+			c.span.SetStatus(codes.Error, err.Error())
+		}
 		return newCheckResult(CheckResponse{}, request.ResponseBody, request), err
 	}
+
 	// 定义
 	var response CheckResponse
 	err = gojson.Unmarshal(request.ResponseBody, &response)
+	if err != nil && c.trace {
+		c.span.SetStatus(codes.Error, err.Error())
+	}
 	return newCheckResult(response, request.ResponseBody, request), err
 }
 

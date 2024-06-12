@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type CancelResponse struct {
@@ -26,17 +27,30 @@ func newCancelResult(result CancelResponse, body []byte, http gorequest.Response
 // out_trade_num = 商户订单号；多个用英文,分割
 // https://www.kancloud.cn/boyanyun/boyanyun_huafei/3182909
 func (c *Client) Cancel(ctx context.Context, outTradeNums string, notMustParams ...gorequest.Params) (*CancelResult, error) {
+
+	// OpenTelemetry链路追踪
+	ctx = c.TraceStartSpan(ctx, "index/cancel")
+	defer c.TraceEndSpan()
+
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
 	params.Set("userid", c.config.userID)      // 账户ID
 	params.Set("out_trade_nums", outTradeNums) // 商户订单号；多个用英文,分割
+
 	// 请求
 	request, err := c.request(ctx, "index/cancel", params)
 	if err != nil {
+		if c.trace {
+			c.span.SetStatus(codes.Error, err.Error())
+		}
 		return newCancelResult(CancelResponse{}, request.ResponseBody, request), err
 	}
+
 	// 定义
 	var response CancelResponse
 	err = gojson.Unmarshal(request.ResponseBody, &response)
+	if err != nil && c.trace {
+		c.span.SetStatus(codes.Error, err.Error())
+	}
 	return newCancelResult(response, request.ResponseBody, request), err
 }

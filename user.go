@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type UserResponse struct {
@@ -30,16 +31,29 @@ func newUserResult(result UserResponse, body []byte, http gorequest.Response) *U
 // https://www.showdoc.com.cn/dyr/9227004018562421
 // https://www.kancloud.cn/boyanyun/boyanyun_huafei/3097251
 func (c *Client) User(ctx context.Context, notMustParams ...gorequest.Params) (*UserResult, error) {
+
+	// OpenTelemetry链路追踪
+	ctx = c.TraceStartSpan(ctx, "index/user")
+	defer c.TraceEndSpan()
+
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
 	params.Set("userid", c.config.userID) // 账号ID
+
 	// 请求
 	request, err := c.request(ctx, "index/user", params)
 	if err != nil {
+		if c.trace {
+			c.span.SetStatus(codes.Error, err.Error())
+		}
 		return newUserResult(UserResponse{}, request.ResponseBody, request), err
 	}
+
 	// 定义
 	var response UserResponse
 	err = gojson.Unmarshal(request.ResponseBody, &response)
+	if err != nil && c.trace {
+		c.span.SetStatus(codes.Error, err.Error())
+	}
 	return newUserResult(response, request.ResponseBody, request), err
 }

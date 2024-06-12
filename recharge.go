@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type RechargeResponse struct {
@@ -54,6 +55,11 @@ func newRechargeResult(result RechargeResponse, body []byte, http gorequest.Resp
 // https://www.showdoc.com.cn/dyr/9227003154511692
 // https://www.kancloud.cn/boyanyun/boyanyun_huafei/3097250
 func (c *Client) Recharge(ctx context.Context, outTradeNum string, productID int64, mobile string, notifyUrl string, notMustParams ...gorequest.Params) (*RechargeResult, error) {
+
+	// OpenTelemetry链路追踪
+	ctx = c.TraceStartSpan(ctx, "index/recharge")
+	defer c.TraceEndSpan()
+
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
 	params.Set("out_trade_num", outTradeNum) // 商户订单号
@@ -61,14 +67,22 @@ func (c *Client) Recharge(ctx context.Context, outTradeNum string, productID int
 	params.Set("mobile", mobile)             // 充值号码
 	params.Set("notify_url", notifyUrl)      // 回调地址
 	params.Set("userid", c.config.userID)    // 商户ID
+
 	// 请求
 	request, err := c.request(ctx, "index/recharge", params)
 	if err != nil {
+		if c.trace {
+			c.span.SetStatus(codes.Error, err.Error())
+		}
 		return newRechargeResult(RechargeResponse{}, request.ResponseBody, request), err
 	}
+
 	// 定义
 	var response RechargeResponse
 	err = gojson.Unmarshal(request.ResponseBody, &response)
+	if err != nil && c.trace {
+		c.span.SetStatus(codes.Error, err.Error())
+	}
 	return newRechargeResult(response, request.ResponseBody, request), err
 }
 

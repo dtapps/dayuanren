@@ -14,10 +14,10 @@ import (
 	"go.dtapp.net/gourl"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -57,13 +57,12 @@ type App struct {
 	httpCookie                   string           // Cookie
 	responseContent              Response         // 返回内容
 	httpContentType              string           // 请求内容类型
-	debug                        bool             // 是否开启调试模式
 	p12Cert                      *tls.Certificate // p12证书内容
 	tlsMinVersion, tlsMaxVersion uint16           // TLS版本
 	clientIP                     string           // 客户端IP
 	logFunc                      LogFunc          // 日志记录函数
-	tr                           trace.Tracer     // OpenTelemetry链路追踪
-	span                         trace.Span       // OpenTelemetry追踪
+	trace                        bool             // OpenTelemetry链路追踪
+	span                         trace.Span       // OpenTelemetry链路追踪
 }
 
 // NewHttp 实例化
@@ -72,12 +71,13 @@ func NewHttp() *App {
 		httpHeader: NewHeaders(),
 		httpParams: NewParams(),
 	}
+	app.trace = true
 	return app
 }
 
-// SetDebug 设置调试模式
-func (app *App) SetDebug() {
-	app.debug = true
+// SetTrace 设置OpenTelemetry链路追踪
+func (app *App) SetTrace(trace bool) {
+	app.trace = trace
 }
 
 // SetUri 设置请求地址
@@ -272,17 +272,13 @@ func (app *App) SetLogFunc(logFunc LogFunc) {
 	app.logFunc = logFunc
 }
 
-// SetTracer 设置链路追踪
-func (app *App) SetTracer(tr trace.Tracer) {
-	app.tr = tr
-}
-
 // 请求接口
 func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 
-	// OpenTelemetry 自定义追踪
-	if c.tr != nil {
-		ctx, c.span = c.tr.Start(ctx, c.Uri)
+	// OpenTelemetry链路追踪
+	if c.trace {
+		tr := otel.Tracer("go.dtapp.net/gorequest", trace.WithInstrumentationVersion(Version))
+		ctx, c.span = tr.Start(ctx, "http."+c.httpMethod)
 		defer c.span.End()
 	}
 
@@ -300,10 +296,6 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	}
 	if httpResponse.RequestUri == "" {
 		c.Error = errors.New("没有设置Uri")
-		if c.debug {
-			slog.DebugContext(ctx, fmt.Sprintf("{%s}------------------------\n", GetRequestIDContext(ctx)))
-			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestID, c.Error))
-		}
 		return httpResponse, c.Error
 	}
 
@@ -368,9 +360,6 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		jsonStr, err := gojson.Marshal(httpResponse.RequestParams)
 		if err != nil {
 			c.Error = errors.New(fmt.Sprintf("解析出错 %s", err))
-			if c.debug {
-				slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestID, c.Error))
-			}
 			return httpResponse, c.Error
 		}
 		// 赋值
@@ -391,9 +380,6 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		reqBody, err = ToXml(httpResponse.RequestParams)
 		if err != nil {
 			c.Error = errors.New(fmt.Sprintf("解析XML出错 %s", err))
-			if c.debug {
-				slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestID, c.Error))
-			}
 			return httpResponse, c.Error
 		}
 	}
@@ -402,9 +388,6 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	req, err := http.NewRequestWithContext(ctx, httpResponse.RequestMethod, httpResponse.RequestUri, reqBody)
 	if err != nil {
 		c.Error = errors.New(fmt.Sprintf("创建请求出错 %s", err))
-		if c.debug {
-			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestID, c.Error))
-		}
 		return httpResponse, c.Error
 	}
 
@@ -436,7 +419,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		}
 	}
 
-	if c.tr != nil {
+	// OpenTelemetry链路追踪
+	if c.trace {
 		c.span.SetAttributes(attribute.String("request.uri", httpResponse.RequestUri))
 		c.span.SetAttributes(attribute.String("request.url", gourl.UriParse(httpResponse.RequestUri).Url))
 		c.span.SetAttributes(attribute.String("request.api", gourl.UriParse(httpResponse.RequestUri).Path))
@@ -444,20 +428,11 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		c.span.SetAttributes(attribute.String("request.header", gojson.JsonEncodeNoError(httpResponse.RequestHeader)))
 		c.span.SetAttributes(attribute.String("request.params", gojson.JsonEncodeNoError(httpResponse.RequestParams)))
 	}
-	if c.debug {
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Uri：%s %s\n", httpResponse.RequestID, httpResponse.RequestMethod, httpResponse.RequestUri))
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Params Get：%+v\n", httpResponse.RequestID, req.URL.RawQuery))
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Params Post：%+v\n", httpResponse.RequestID, reqBody))
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}请求Header：%+v\n", httpResponse.RequestID, req.Header))
-	}
 
 	// 发送请求
 	resp, err := client.Do(req)
 	if err != nil {
 		c.Error = errors.New(fmt.Sprintf("请求出错 %s", err))
-		if c.debug {
-			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestID, c.Error))
-		}
 		return httpResponse, c.Error
 	}
 
@@ -479,9 +454,6 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	body, err := io.ReadAll(reader)
 	if err != nil {
 		c.Error = errors.New(fmt.Sprintf("解析内容出错 %s", err))
-		if c.debug {
-			slog.DebugContext(ctx, fmt.Sprintf("{%s}请求异常：%v\n", httpResponse.RequestID, c.Error))
-		}
 		return httpResponse, c.Error
 	}
 
@@ -493,8 +465,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	httpResponse.ResponseBody = body
 	httpResponse.ResponseContentLength = resp.ContentLength
 
-	// OpenTelemetry追踪
-	if c.tr != nil {
+	// OpenTelemetry链路追踪
+	if c.trace {
 		c.span.SetAttributes(attribute.String("response.status", httpResponse.ResponseStatus))
 		c.span.SetAttributes(attribute.Int("response.status_code", httpResponse.ResponseStatusCode))
 		c.span.SetAttributes(attribute.String("response.header", gojson.JsonEncodeNoError(httpResponse.ResponseHeader)))
@@ -503,12 +475,6 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		c.span.SetAttributes(attribute.String("response.body", gojson.JsonEncodeNoError(gojson.JsonDecodeNoError(string(httpResponse.ResponseBody)))))
 	} else {
 		c.span.SetAttributes(attribute.String("response.body", string(httpResponse.ResponseBody)))
-	}
-	if c.debug {
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}返回Status：%s\n", httpResponse.RequestID, httpResponse.ResponseStatus))
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}返回Header：%+v\n", httpResponse.RequestID, httpResponse.ResponseHeader))
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}返回Body：%s\n", httpResponse.RequestID, httpResponse.ResponseBody))
-		slog.DebugContext(ctx, fmt.Sprintf("{%s}------------------------\n", GetRequestIDContext(ctx)))
 	}
 
 	// 调用日志记录函数

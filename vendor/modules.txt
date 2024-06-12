@@ -100,7 +100,7 @@ go.dtapp.net/gomd5
 # go.dtapp.net/gorandom v1.0.3
 ## explicit; go 1.22
 go.dtapp.net/gorandom
-# go.dtapp.net/gorequest v1.0.61
+# go.dtapp.net/gorequest v1.0.62
 ## explicit; go 1.22.3
 go.dtapp.net/gorequest
 # go.dtapp.net/gostring v1.0.15

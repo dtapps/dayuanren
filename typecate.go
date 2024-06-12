@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type TypecateResponse struct {
@@ -34,16 +35,29 @@ func newTypecateResult(result TypecateResponse, body []byte, http gorequest.Resp
 // https://www.showdoc.com.cn/dyr/9227005390454727
 // https://www.kancloud.cn/boyanyun/boyanyun_huafei/3097252
 func (c *Client) Typecate(ctx context.Context, notMustParams ...gorequest.Params) (*TypecateResult, error) {
+
+	// OpenTelemetry链路追踪
+	ctx = c.TraceStartSpan(ctx, "index/typecate")
+	defer c.TraceEndSpan()
+
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
 	params.Set("userid", c.config.userID) // 商户ID
+
 	// 请求
 	request, err := c.request(ctx, "index/typecate", params)
 	if err != nil {
+		if c.trace {
+			c.span.SetStatus(codes.Error, err.Error())
+		}
 		return newTypecateResult(TypecateResponse{}, request.ResponseBody, request), err
 	}
+
 	// 定义
 	var response TypecateResponse
 	err = gojson.Unmarshal(request.ResponseBody, &response)
+	if err != nil && c.trace {
+		c.span.SetStatus(codes.Error, err.Error())
+	}
 	return newTypecateResult(response, request.ResponseBody, request), err
 }
