@@ -1,5 +1,7 @@
 package dayuanren
 
+import "go.dtapp.net/gorequest"
+
 // ConfigClient 配置
 func (c *Client) ConfigClient(config *ClientConfig) {
 	c.config.apiURL = config.ApiURL
