@@ -1,10 +1,5 @@
 package dayuanren
 
-import (
-	"go.dtapp.net/gorequest"
-	"go.opentelemetry.io/otel/trace"
-)
-
 // ConfigClient 配置
 func (c *Client) ConfigClient(config *ClientConfig) {
 	c.config.apiURL = config.ApiURL
@@ -20,13 +15,6 @@ func (c *Client) SetClientIP(clientIP string) {
 	c.config.clientIP = clientIP
 	if c.httpClient != nil {
 		c.httpClient.SetClientIP(clientIP)
-	}
-}
-
-// SetTracer 设置链路追踪
-func (c *Client) SetTracer(tr trace.Tracer) {
-	if c.httpClient != nil {
-		c.httpClient.SetTracer(tr)
 	}
 }
 

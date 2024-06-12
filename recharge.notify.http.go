@@ -22,20 +22,6 @@ type ResponseRechargeNotifyHttp struct {
 // RechargeNotifyHttp 充值结果通知-异步通知
 // https://www.kancloud.cn/boyanyun/boyanyun_huafei/3097255
 func (c *Client) RechargeNotifyHttp(w http.ResponseWriter, r *http.Request) (validateJson ResponseRechargeNotifyHttp, err error) {
-	if r.Method == http.MethodPost {
-		err = gojson.NewDecoder(r.Body).Decode(&validateJson)
-	} else if r.Method == http.MethodGet {
-		validateJson.Userid = r.URL.Query().Get("userid")
-		validateJson.OrderNumber = r.URL.Query().Get("order_number")
-		validateJson.OutTradeNum = r.URL.Query().Get("out_trade_num")
-		validateJson.Otime = r.URL.Query().Get("otime")
-		validateJson.State = r.URL.Query().Get("state")
-		validateJson.Mobile = r.URL.Query().Get("mobile")
-		validateJson.Remark = r.URL.Query().Get("remark")
-		validateJson.ChargeAmount = r.URL.Query().Get("charge_amount")
-		validateJson.Voucher = r.URL.Query().Get("voucher")
-		validateJson.ChargeKami = r.URL.Query().Get("charge_kami")
-		validateJson.Sign = r.URL.Query().Get("sign")
-	}
+	err = gojson.NewDecoder(r.Body).Decode(&validateJson)
 	return validateJson, err
 }
