@@ -72,6 +72,7 @@ func (c *Client) Recharge(ctx context.Context, outTradeNum string, productID int
 	request, err := c.request(ctx, "index/recharge", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newRechargeResult(RechargeResponse{}, request.ResponseBody, request), err
 	}
 
@@ -80,6 +81,7 @@ func (c *Client) Recharge(ctx context.Context, outTradeNum string, productID int
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newRechargeResult(response, request.ResponseBody, request), err
 }

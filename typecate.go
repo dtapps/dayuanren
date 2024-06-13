@@ -48,6 +48,7 @@ func (c *Client) Typecate(ctx context.Context, notMustParams ...gorequest.Params
 	request, err := c.request(ctx, "index/typecate", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newTypecateResult(TypecateResponse{}, request.ResponseBody, request), err
 	}
 
@@ -56,6 +57,7 @@ func (c *Client) Typecate(ctx context.Context, notMustParams ...gorequest.Params
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newTypecateResult(response, request.ResponseBody, request), err
 }

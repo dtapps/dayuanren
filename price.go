@@ -53,6 +53,7 @@ func (c *Client) Price(ctx context.Context, id int64, notMustParams ...gorequest
 	request, err := c.request(ctx, "index/price", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newPriceResult(PriceResponse{}, request.ResponseBody, request), err
 	}
 
@@ -61,6 +62,7 @@ func (c *Client) Price(ctx context.Context, id int64, notMustParams ...gorequest
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newPriceResult(response, request.ResponseBody, request), err
 }

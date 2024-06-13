@@ -44,6 +44,7 @@ func (c *Client) User(ctx context.Context, notMustParams ...gorequest.Params) (*
 	request, err := c.request(ctx, "index/user", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newUserResult(UserResponse{}, request.ResponseBody, request), err
 	}
 
@@ -52,6 +53,7 @@ func (c *Client) User(ctx context.Context, notMustParams ...gorequest.Params) (*
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newUserResult(response, request.ResponseBody, request), err
 }

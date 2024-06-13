@@ -52,6 +52,7 @@ func (c *Client) Elecity(ctx context.Context, notMustParams ...gorequest.Params)
 	request, err := c.request(ctx, "index/elecity", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newElecityResult(ElecityResponse{}, request.ResponseBody, request), err
 	}
 
@@ -60,6 +61,7 @@ func (c *Client) Elecity(ctx context.Context, notMustParams ...gorequest.Params)
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newElecityResult(response, request.ResponseBody, request), err
 }

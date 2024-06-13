@@ -73,6 +73,7 @@ func (c *Client) Product(ctx context.Context, notMustParams ...gorequest.Params)
 	request, err := c.request(ctx, "index/product", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newProductResult(ProductResponse{}, request.ResponseBody, request), err
 	}
 
@@ -81,6 +82,7 @@ func (c *Client) Product(ctx context.Context, notMustParams ...gorequest.Params)
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newProductResult(response, request.ResponseBody, request), err
 }

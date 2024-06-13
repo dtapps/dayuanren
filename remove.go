@@ -41,6 +41,7 @@ func (c *Client) Remove(ctx context.Context, outTradeNums string, notMustParams 
 	request, err := c.request(ctx, "index/remove", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newRemoveResult(RemoveResponse{}, request.ResponseBody, request), err
 	}
 
@@ -49,6 +50,7 @@ func (c *Client) Remove(ctx context.Context, outTradeNums string, notMustParams 
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newRemoveResult(response, request.ResponseBody, request), err
 }

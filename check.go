@@ -64,6 +64,7 @@ func (c *Client) Check(ctx context.Context, outTradeNums string, notMustParams .
 	request, err := c.request(ctx, "index/check", params)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return newCheckResult(CheckResponse{}, request.ResponseBody, request), err
 	}
 
@@ -72,6 +73,7 @@ func (c *Client) Check(ctx context.Context, outTradeNums string, notMustParams .
 	err = gojson.Unmarshal(request.ResponseBody, &response)
 	if err != nil {
 		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 	}
 	return newCheckResult(response, request.ResponseBody, request), err
 }

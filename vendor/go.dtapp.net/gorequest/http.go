@@ -35,6 +35,7 @@ type Response struct {
 	RequestHeader         Headers     `json:"request_header"`          // 请求头部
 	RequestCookie         string      `json:"request_cookie"`          // 请求Cookie
 	RequestTime           time.Time   `json:"request_time"`            // 请求时间
+	RequestCostTime       int64       `json:"request_cost_time"`       // 请求消耗时长
 	ResponseHeader        http.Header `json:"response_header"`         // 响应头部
 	ResponseStatus        string      `json:"response_status"`         // 响应状态
 	ResponseStatusCode    int         `json:"response_status_code"`    // 响应状态码
@@ -274,6 +275,9 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	ctx = c.TraceStartSpan(ctx, c.httpMethod)
 	defer c.TraceEndSpan()
 
+	// 开始时间
+	start := time.Now().UTC()
+
 	// 赋值
 	httpResponse.RequestTime = gotime.Current().Time
 	httpResponse.RequestUri = c.httpUri
@@ -288,7 +292,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	}
 	if httpResponse.RequestUri == "" {
 		c.Error = errors.New("没有设置Uri")
-		c.span.SetStatus(codes.Error, c.Error.Error())
+		c.TraceSetStatus(codes.Error, c.Error.Error())
+		c.TraceRecordError(c.Error)
 		return httpResponse, c.Error
 	}
 
@@ -353,7 +358,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		jsonStr, err := gojson.Marshal(httpResponse.RequestParams)
 		if err != nil {
 			c.Error = fmt.Errorf("解析出错 %s", err)
-			c.span.SetStatus(codes.Error, err.Error())
+			c.TraceSetStatus(codes.Error, err.Error())
+			c.TraceRecordError(err)
 			return httpResponse, c.Error
 		}
 		// 赋值
@@ -374,7 +380,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		reqBody, err = ToXml(httpResponse.RequestParams)
 		if err != nil {
 			c.Error = fmt.Errorf("解析XML出错 %s", err)
-			c.span.SetStatus(codes.Error, c.Error.Error())
+			c.TraceSetStatus(codes.Error, err.Error())
+			c.TraceRecordError(err)
 			return httpResponse, c.Error
 		}
 	}
@@ -383,7 +390,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	req, err := http.NewRequestWithContext(ctx, httpResponse.RequestMethod, httpResponse.RequestUri, reqBody)
 	if err != nil {
 		c.Error = fmt.Errorf("创建请求出错 %s", err)
-		c.span.SetStatus(codes.Error, err.Error())
+		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return httpResponse, c.Error
 	}
 
@@ -416,10 +424,12 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	}
 
 	// OpenTelemetry链路追踪
+	c.TraceSetAttributes(attribute.String("request.time", httpResponse.RequestTime.Format(gotime.DateTimeFormat)))
 	c.TraceSetAttributes(attribute.String("request.uri", httpResponse.RequestUri))
 	c.TraceSetAttributes(attribute.String("request.url", gourl.UriParse(httpResponse.RequestUri).Url))
 	c.TraceSetAttributes(attribute.String("request.api", gourl.UriParse(httpResponse.RequestUri).Path))
 	c.TraceSetAttributes(attribute.String("request.method", httpResponse.RequestMethod))
+	c.TraceSetAttributes(attribute.String("request.cookie", httpResponse.RequestCookie))
 	c.TraceSetAttributes(attribute.String("request.header", gojson.JsonEncodeNoError(httpResponse.RequestHeader)))
 	c.TraceSetAttributes(attribute.String("request.params", gojson.JsonEncodeNoError(httpResponse.RequestParams)))
 
@@ -427,12 +437,17 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		c.Error = fmt.Errorf("请求出错 %s", err)
-		c.span.SetStatus(codes.Error, err.Error())
+		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return httpResponse, c.Error
 	}
+	defer resp.Body.Close() // 关闭连接
 
-	// 最后关闭连接
-	defer resp.Body.Close()
+	// 结束时间
+	end := time.Now().UTC()
+
+	// 请求消耗时长
+	httpResponse.RequestCostTime = end.Sub(start).Milliseconds()
 
 	var reader io.ReadCloser
 	switch resp.Header.Get("Content-Encoding") {
@@ -449,7 +464,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	body, err := io.ReadAll(reader)
 	if err != nil {
 		c.Error = fmt.Errorf("解析内容出错 %s", err)
-		c.span.SetStatus(codes.Error, err.Error())
+		c.TraceSetStatus(codes.Error, err.Error())
+		c.TraceRecordError(err)
 		return httpResponse, c.Error
 	}
 
@@ -462,6 +478,8 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	httpResponse.ResponseContentLength = resp.ContentLength
 
 	// OpenTelemetry链路追踪
+	c.TraceSetAttributes(attribute.Int64("request.cost_time", httpResponse.RequestCostTime))
+	c.TraceSetAttributes(attribute.String("response.time", httpResponse.ResponseTime.Format(gotime.DateTimeFormat)))
 	c.TraceSetAttributes(attribute.String("response.status", httpResponse.ResponseStatus))
 	c.TraceSetAttributes(attribute.Int("response.status_code", httpResponse.ResponseStatusCode))
 	c.TraceSetAttributes(attribute.String("response.header", gojson.JsonEncodeNoError(httpResponse.ResponseHeader)))
@@ -470,6 +488,7 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	} else {
 		c.TraceSetAttributes(attribute.String("response.body", string(httpResponse.ResponseBody)))
 	}
+	c.TraceSetAttributes(attribute.Int64("response.content_length", httpResponse.ResponseContentLength))
 
 	// 调用日志记录函数
 	if c.logFunc != nil {
@@ -484,6 +503,7 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 			RequestMethod:      httpResponse.RequestMethod,
 			RequestParams:      gojson.JsonEncodeNoError(httpResponse.RequestParams),
 			RequestHeader:      gojson.JsonEncodeNoError(httpResponse.RequestHeader),
+			RequestCostTime:    httpResponse.RequestCostTime,
 			RequestIP:          c.clientIP,
 			ResponseHeader:     gojson.JsonEncodeNoError(httpResponse.ResponseHeader),
 			ResponseStatusCode: httpResponse.ResponseStatusCode,
