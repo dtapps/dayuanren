@@ -2,9 +2,7 @@ package dayuanren
 
 import (
 	"context"
-	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
-	"go.opentelemetry.io/otel/codes"
 )
 
 type RemoveResponse struct {
@@ -34,23 +32,11 @@ func (c *Client) Remove(ctx context.Context, outTradeNums string, notMustParams 
 
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
-	params.Set("userid", c.config.userID)      // 账户ID
+	params.Set("userid", c.GetUserID())        // 账户ID
 	params.Set("out_trade_nums", outTradeNums) // 商户订单号；多个用英文,分割
 
 	// 请求
-	request, err := c.request(ctx, "index/remove", params)
-	if err != nil {
-		c.TraceSetStatus(codes.Error, err.Error())
-		c.TraceRecordError(err)
-		return newRemoveResult(RemoveResponse{}, request.ResponseBody, request), err
-	}
-
-	// 定义
 	var response RemoveResponse
-	err = gojson.Unmarshal(request.ResponseBody, &response)
-	if err != nil {
-		c.TraceSetStatus(codes.Error, err.Error())
-		c.TraceRecordError(err)
-	}
+	request, err := c.request(ctx, "index/remove", params, &response)
 	return newRemoveResult(response, request.ResponseBody, request), err
 }

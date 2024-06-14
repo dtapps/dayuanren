@@ -3,6 +3,7 @@ package gorequest
 import (
 	"context"
 	"fmt"
+	"go.dtapp.net/gostring"
 )
 
 var (
@@ -10,13 +11,14 @@ var (
 	tNil       = "%!s(<nil>)"
 )
 
-func GetRequestIDContext(ctx context.Context) string {
-	return customGetIDContext(ctx, xRequestID)
+// SetRequestIDContext 设置请求编号
+func SetRequestIDContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, xRequestID, gostring.GetUuId())
 }
 
-// customGetIDContext 通过自定义上下文获取跟踪编号
-func customGetIDContext(ctx context.Context, key string) string {
-	traceId := fmt.Sprintf("%s", ctx.Value(key))
+// GetRequestIDContext 获取请求编号
+func GetRequestIDContext(ctx context.Context) string {
+	traceId := fmt.Sprintf("%s", ctx.Value(xRequestID))
 	if traceId == tNil {
 		return ""
 	}

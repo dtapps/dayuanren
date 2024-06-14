@@ -4,7 +4,6 @@ import (
 	"context"
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
-	"go.opentelemetry.io/otel/codes"
 )
 
 type RechargeResponse struct {
@@ -66,23 +65,11 @@ func (c *Client) Recharge(ctx context.Context, outTradeNum string, productID int
 	params.Set("product_id", productID)      // 产品ID
 	params.Set("mobile", mobile)             // 充值号码
 	params.Set("notify_url", notifyUrl)      // 回调地址
-	params.Set("userid", c.config.userID)    // 商户ID
+	params.Set("userid", c.GetUserID())      // 商户ID
 
 	// 请求
-	request, err := c.request(ctx, "index/recharge", params)
-	if err != nil {
-		c.TraceSetStatus(codes.Error, err.Error())
-		c.TraceRecordError(err)
-		return newRechargeResult(RechargeResponse{}, request.ResponseBody, request), err
-	}
-
-	// 定义
 	var response RechargeResponse
-	err = gojson.Unmarshal(request.ResponseBody, &response)
-	if err != nil {
-		c.TraceSetStatus(codes.Error, err.Error())
-		c.TraceRecordError(err)
-	}
+	request, err := c.request(ctx, "index/recharge", params, &response)
 	return newRechargeResult(response, request.ResponseBody, request), err
 }
 

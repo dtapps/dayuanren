@@ -50,7 +50,6 @@ type LogFunc func(ctx context.Context, response *LogResponse)
 // App 实例
 type App struct {
 	Uri                          string           // 全局请求地址，没有设置url才会使用
-	Error                        error            // 错误
 	httpUri                      string           // 请求地址
 	httpMethod                   string           // 请求方法
 	httpHeader                   Headers          // 请求头
@@ -291,10 +290,10 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 		httpResponse.RequestUri = c.Uri
 	}
 	if httpResponse.RequestUri == "" {
-		c.Error = errors.New("没有设置Uri")
-		c.TraceSetStatus(codes.Error, c.Error.Error())
-		c.TraceRecordError(c.Error)
-		return httpResponse, c.Error
+		err = errors.New("没有请求地址")
+		c.TraceRecordError(err)
+		c.TraceSetStatus(codes.Error, err.Error())
+		return httpResponse, err
 	}
 
 	// 创建 http 客户端
@@ -357,10 +356,9 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	if httpResponse.RequestMethod != http.MethodGet && c.httpContentType == httpParamsModeJson {
 		jsonStr, err := gojson.Marshal(httpResponse.RequestParams)
 		if err != nil {
-			c.Error = fmt.Errorf("解析出错 %s", err)
-			c.TraceSetStatus(codes.Error, err.Error())
 			c.TraceRecordError(err)
-			return httpResponse, c.Error
+			c.TraceSetStatus(codes.Error, err.Error())
+			return httpResponse, err
 		}
 		// 赋值
 		reqBody = bytes.NewBuffer(jsonStr)
@@ -379,20 +377,18 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	if c.httpContentType == httpParamsModeXml {
 		reqBody, err = ToXml(httpResponse.RequestParams)
 		if err != nil {
-			c.Error = fmt.Errorf("解析XML出错 %s", err)
-			c.TraceSetStatus(codes.Error, err.Error())
 			c.TraceRecordError(err)
-			return httpResponse, c.Error
+			c.TraceSetStatus(codes.Error, err.Error())
+			return httpResponse, err
 		}
 	}
 
 	// 创建请求
 	req, err := http.NewRequestWithContext(ctx, httpResponse.RequestMethod, httpResponse.RequestUri, reqBody)
 	if err != nil {
-		c.Error = fmt.Errorf("创建请求出错 %s", err)
-		c.TraceSetStatus(codes.Error, err.Error())
 		c.TraceRecordError(err)
-		return httpResponse, c.Error
+		c.TraceSetStatus(codes.Error, err.Error())
+		return httpResponse, err
 	}
 
 	// GET 请求携带查询参数
@@ -436,10 +432,9 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	// 发送请求
 	resp, err := client.Do(req)
 	if err != nil {
-		c.Error = fmt.Errorf("请求出错 %s", err)
-		c.TraceSetStatus(codes.Error, err.Error())
 		c.TraceRecordError(err)
-		return httpResponse, c.Error
+		c.TraceSetStatus(codes.Error, err.Error())
+		return httpResponse, err
 	}
 	defer resp.Body.Close() // 关闭连接
 
@@ -463,10 +458,9 @@ func request(c *App, ctx context.Context) (httpResponse Response, err error) {
 	// 读取内容
 	body, err := io.ReadAll(reader)
 	if err != nil {
-		c.Error = fmt.Errorf("解析内容出错 %s", err)
-		c.TraceSetStatus(codes.Error, err.Error())
 		c.TraceRecordError(err)
-		return httpResponse, c.Error
+		c.TraceSetStatus(codes.Error, err.Error())
+		return httpResponse, err
 	}
 
 	// 赋值

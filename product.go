@@ -2,9 +2,7 @@ package dayuanren
 
 import (
 	"context"
-	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
-	"go.opentelemetry.io/otel/codes"
 )
 
 type ProductResponse struct {
@@ -67,22 +65,10 @@ func (c *Client) Product(ctx context.Context, notMustParams ...gorequest.Params)
 
 	// 参数
 	params := gorequest.NewParamsWith(notMustParams...)
-	params.Set("userid", c.config.userID) // 商户ID
+	params.Set("userid", c.GetUserID()) // 商户ID
 
 	// 请求
-	request, err := c.request(ctx, "index/product", params)
-	if err != nil {
-		c.TraceSetStatus(codes.Error, err.Error())
-		c.TraceRecordError(err)
-		return newProductResult(ProductResponse{}, request.ResponseBody, request), err
-	}
-
-	// 定义
 	var response ProductResponse
-	err = gojson.Unmarshal(request.ResponseBody, &response)
-	if err != nil {
-		c.TraceSetStatus(codes.Error, err.Error())
-		c.TraceRecordError(err)
-	}
+	request, err := c.request(ctx, "index/product", params, &response)
 	return newProductResult(response, request.ResponseBody, request), err
 }

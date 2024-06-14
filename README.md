@@ -2,7 +2,7 @@
 <a href="https://www.dtapp.net/">Golang</a>
 </h1>
 
-📦 Golang 猿人充值系统
+📦 Golang 大猿人充值系统
 
 [comment]: <> (go)
 [![godoc](https://pkg.go.dev/badge/go.dtapp.net/dayuanren?status.svg)](https://pkg.go.dev/go.dtapp.net/dayuanren)
@@ -13,5 +13,5 @@
 #### 安装
 
 ```shell
-go get -v -u go.dtapp.net/dayuanren@v1.0.16
+go get -v -u go.dtapp.net/dayuanren@v1.0.17
 ```

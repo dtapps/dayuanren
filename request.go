@@ -5,16 +5,20 @@ import (
 	"go.dtapp.net/gojson"
 	"go.dtapp.net/gorequest"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // 请求接口
-func (c *Client) request(ctx context.Context, url string, param gorequest.Params) (gorequest.Response, error) {
+func (c *Client) request(ctx context.Context, url string, param gorequest.Params, response any) (gorequest.Response, error) {
+
+	// 请求地址
+	uri := c.GetApiURL() + url
 
 	// 签名
 	param.Set("sign", c.sign(param))
 
 	// 设置请求地址
-	c.httpClient.SetUri(c.config.apiURL + url)
+	c.httpClient.SetUri(uri)
 
 	// 设置FORM格式
 	c.httpClient.SetContentTypeForm()
@@ -23,13 +27,21 @@ func (c *Client) request(ctx context.Context, url string, param gorequest.Params
 	c.httpClient.SetParams(param)
 
 	// OpenTelemetry链路追踪
-	c.TraceSetAttributes(attribute.String("http.url", c.config.apiURL+url))
+	c.TraceSetAttributes(attribute.String("http.url", uri))
 	c.TraceSetAttributes(attribute.String("http.params", gojson.JsonEncodeNoError(param)))
 
 	// 发起请求
 	request, err := c.httpClient.Post(ctx)
 	if err != nil {
+		c.TraceRecordError(err)
+		c.TraceSetStatus(codes.Error, err.Error())
 		return gorequest.Response{}, err
+	}
+
+	err = gojson.Unmarshal(request.ResponseBody, &response)
+	if err != nil {
+		c.TraceRecordError(err)
+		c.TraceSetStatus(codes.Error, err.Error())
 	}
 
 	return request, err

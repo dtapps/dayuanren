@@ -2,26 +2,36 @@ package dayuanren
 
 import "go.dtapp.net/gorequest"
 
-// ConfigClient 配置
-func (c *Client) ConfigClient(config *ClientConfig) {
-	c.config.apiURL = config.ApiURL
-	c.config.userID = config.UserID
-	c.config.apiKey = config.ApiKey
+func (c *Client) GetApiURL() string {
+	return c.config.apiURL
 }
 
-func (c *Client) SetUserID(userID int64) *Client {
-	c.config.userID = userID
+func (c *Client) SetApiURL(v string) *Client {
+	c.config.apiURL = v
 	return c
 }
 
-func (c *Client) SetApiKey(apiKey string) *Client {
-	c.config.apiKey = apiKey
+func (c *Client) GetUserID() int64 {
+	return c.config.userID
+}
+
+func (c *Client) SetUserID(v int64) *Client {
+	c.config.userID = v
+	return c
+}
+
+func (c *Client) GetApiKey() string {
+	return c.config.apiKey
+}
+
+func (c *Client) SetApiKey(v string) *Client {
+	c.config.apiKey = v
 	return c
 }
 
 // SetClientIP 配置
 func (c *Client) SetClientIP(clientIP string) *Client {
-	c.config.clientIP = clientIP
+	c.clientIP = clientIP
 	if c.httpClient != nil {
 		c.httpClient.SetClientIP(clientIP)
 	}

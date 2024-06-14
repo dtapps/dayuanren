@@ -20,6 +20,6 @@ func (c *Client) sign(param gorequest.Params) string {
 	for _, key := range keys {
 		signStr += fmt.Sprintf("%s=%s&", key, gostring.ToString(param.Get(key)))
 	}
-	signStr += fmt.Sprintf("apikey=%s", c.config.apiKey)
+	signStr += fmt.Sprintf("apikey=%s", c.GetApiKey())
 	return gomd5.ToUpper(signStr)
 }
